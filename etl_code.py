@@ -33,52 +33,37 @@ pinecone.init(api_key="YOUR_API_KEY", environment="us-west1-gcp")
 
 # Define index parameters
 index_name = "tweet-embeddings"
-if index_name not in pinecone.list_indexes():
-    pinecone.create_index(
-        name=index_name,
-        dimension=384,  # Example dimension for SBERT
-        metric="cosine",  # Metric for similarity search
-        metadata_config={"indexed": ["region", "hashtags", "language", "publish_date", "phases_of_day"]}
-    )
 index = pinecone.Index(index_name)
 
 
+def upsert_records(df):
+    records = [
+        {
+            "id": str(row["tweet_id"]),
+            "values": row["embedding"],
+            "metadata": {
+                "region": row["region"],
+                "hashtags": row["hashtags"],
+                "language": row["language"],
+                "publish_date": row["publish_date"],
+                "phases_of_day": row["Phases of day"],
+            },
+        }
+        for _, row in df.iterrows()
+    ]
 
-records = [
-    {
-        "id": str(row["tweet_id"]),
-        "values": row["embedding"],
-        "metadata": {
-            "region": row["region"],
-            "hashtags": row["hashtags"],
-            "language": row["language"],
-            "publish_date": row["publish_date"],
-            "phases_of_day": row["Phases of day"],
-        },
-    }
-    for _, row in df.iterrows()
-]
-
-# Insert data into Pinecone
-index.upsert(records)
+    # Insert data into Pinecone
+    index.upsert(records)
 
 
-
-chunksize = 1000
+chunk_size = 1000
 columns = ["tweet_id", "content", "language", "region", "updates", "publish_date"]
 files = ["./russian-troll-tweets/IRAhandle_tweets_1.csv"]
 for file in files:
-    for df in pd.read_csv(file, chunksize=chunksize):
+    for df in pd.read_csv(file, chunksize=chunk_size):
         df = df[columns]
         df = df[(df["language"] == "English") & (~(df["region"] == "Unknown") | df["region"].isnull())]
         df["embeddings"] = df["content"].apply(model.encode)
         df["hashtags"] = df["content"].apply(extract_hashtags)
         df["phase_of_date"] = df["publish_date"].apply(extract_phases_of_day)
-
-
-
-
-
-
-
-
+        upsert_records(df)
