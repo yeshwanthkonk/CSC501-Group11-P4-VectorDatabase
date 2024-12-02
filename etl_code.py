@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-
+import pinecone
 import torch
 from sentence_transformers import SentenceTransformer
 import pandas as pd
@@ -27,6 +27,41 @@ def extract_phases_of_day(publish_date):
         return "Evening"
     else:
         return "Night"
+
+
+pinecone.init(api_key="YOUR_API_KEY", environment="us-west1-gcp")
+
+# Define index parameters
+index_name = "tweet-embeddings"
+if index_name not in pinecone.list_indexes():
+    pinecone.create_index(
+        name=index_name,
+        dimension=384,  # Example dimension for SBERT
+        metric="cosine",  # Metric for similarity search
+        metadata_config={"indexed": ["region", "hashtags", "language", "publish_date", "phases_of_day"]}
+    )
+index = pinecone.Index(index_name)
+
+
+
+records = [
+    {
+        "id": str(row["tweet_id"]),
+        "values": row["embedding"],
+        "metadata": {
+            "region": row["region"],
+            "hashtags": row["hashtags"],
+            "language": row["language"],
+            "publish_date": row["publish_date"],
+            "phases_of_day": row["Phases of day"],
+        },
+    }
+    for _, row in df.iterrows()
+]
+
+# Insert data into Pinecone
+index.upsert(records)
+
 
 
 chunksize = 1000
