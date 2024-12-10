@@ -1,0 +1,90 @@
+import pinecone
+import matplotlib.pyplot as plt
+import pandas as pd
+from collections import Counter
+
+phases = ["Morning", "Afternoon", "Evening", "Night"]
+
+response = index.query(
+    vector=[0] * 384, 
+    top_k=10000,
+    filter={"phases_of_day": {"$eq": "Morning"}},
+    include_metadata=True
+)
+
+# Extract the data
+print(response['matches'])
+
+import matplotlib.pyplot as plt
+
+# Bar chart for tweet frequency
+plt.figure(figsize=(8, 6))
+plt.bar(tweet_frequency['phases_of_day'], tweet_frequency['tweet_count'], color='skyblue')
+plt.title("Tweet Frequency by Phases of Day", fontsize=16)
+plt.xlabel("Phases of Day", fontsize=12)
+plt.ylabel("Tweet Count", fontsize=12)
+plt.xticks(rotation=45)
+plt.show()
+
+
+c = len(response['matches'])
+print(c)
+
+
+response = index.query(
+    vector=[9] * 384, 
+    top_k=10000,
+    include_metadata=True
+)
+
+# Convert response to DataFrame
+data = [
+    {
+        "id": match["id"],
+        **match["metadata"]
+    }
+    for match in response["matches"]
+]
+df = pd.DataFrame(data)
+
+# Count tweets by phases of day
+tweet_frequency = df['phases_of_day'].value_counts().reset_index()
+tweet_frequency.columns = ['phases_of_day', 'tweet_count']
+
+print(tweet_frequency)
+
+# Calculate total number of tweets for each region
+tweets_by_region = df['region'].value_counts().reset_index()
+
+# Rename the columns for better clarity
+tweets_by_region.columns = ['region', 'tweet_count']
+
+# Display the result
+print(tweets_by_region)
+
+
+# Assuming retweet_count and like_count are part of metadata
+if 'retweet_count' in df.columns and 'like_count' in df.columns:
+    # Group by phases of day and calculate average engagement
+    engagement_by_phase = df.groupby('phases_of_day')[['retweet_count', 'like_count']].mean().reset_index()
+
+    print(engagement_by_phase)
+
+# Pie-chart
+
+# Calculate tweet frequency by phases of day
+tweet_frequency = df['phases_of_day'].value_counts().reset_index()
+tweet_frequency.columns = ['phases_of_day', 'tweet_count']
+
+# Plotting a pie chart
+plt.figure(figsize=(8, 8))
+plt.pie(
+    tweet_frequency['tweet_count'],
+    labels=tweet_frequency['phases_of_day'],
+    autopct='%1.1f%%',
+    startangle=140,
+    colors=plt.cm.Paired.colors
+)
+
+plt.title("Tweet Frequency by Phases of Day", fontsize=16)
+plt.show()
