@@ -1,35 +1,6 @@
 import pinecone
-import matplotlib.pyplot as plt
 import pandas as pd
-from collections import Counter
-
-phases = ["Morning", "Afternoon", "Evening", "Night"]
-
-response = index.query(
-    vector=[0] * 384, 
-    top_k=10000,
-    filter={"phases_of_day": {"$eq": "Morning"}},
-    include_metadata=True
-)
-
-# Extract the data
-print(response['matches'])
-
 import matplotlib.pyplot as plt
-
-# Bar chart for tweet frequency
-plt.figure(figsize=(8, 6))
-plt.bar(tweet_frequency['phases_of_day'], tweet_frequency['tweet_count'], color='skyblue')
-plt.title("Tweet Frequency by Phases of Day", fontsize=16)
-plt.xlabel("Phases of Day", fontsize=12)
-plt.ylabel("Tweet Count", fontsize=12)
-plt.xticks(rotation=45)
-plt.show()
-
-
-c = len(response['matches'])
-print(c)
-
 
 response = index.query(
     vector=[9] * 384, 
@@ -87,4 +58,36 @@ plt.pie(
 )
 
 plt.title("Tweet Frequency by Phases of Day", fontsize=16)
+plt.show()
+
+# Get the top 4 countries based on tweet count
+top_3_countries = tweets_by_region.head(3)['region'].tolist()
+
+# Filter the data to only include the top 4 countries
+filtered_df = df[df['region'].isin(top_3_countries)]
+
+# Set up the figure for multiple pie charts (one for each country)
+fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+axes = axes.flatten()
+
+# Iterate over the top 3 countries and plot a pie chart for each
+for i, country in enumerate(top_3_countries):
+    # Filter data for the specific country
+    country_data = filtered_df[filtered_df['region'] == country]
+
+    # Count tweet frequency for each phase of day
+    phase_counts = country_data['phases_of_day'].value_counts()
+
+    # Plot pie chart
+    axes[i].pie(
+        phase_counts,
+        labels=phase_counts.index,
+        autopct='%1.1f%%',
+        startangle=140,
+        colors=plt.cm.Paired.colors
+    )
+    axes[i].set_title(f"Tweet Frequency by Phases of Day for {country}", fontsize=14)
+
+# Display the pie charts
+plt.tight_layout()
 plt.show()
