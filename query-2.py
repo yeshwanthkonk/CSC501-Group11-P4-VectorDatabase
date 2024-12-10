@@ -60,7 +60,8 @@ plt.pie(
 plt.title("Tweet Frequency by Phases of Day", fontsize=16)
 plt.show()
 
-# Get the top 4 countries based on tweet count
+
+# Get the top 3 countries based on tweet count
 top_3_countries = tweets_by_region.head(3)['region'].tolist()
 
 # Filter the data to only include the top 4 countries
