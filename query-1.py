@@ -16,11 +16,11 @@ for region in regions:
   )
 
   # Extract the data
-  top_1000_vectors = response['matches']
+  top_10000_vectors = response['matches']
 
   hashtags_by_region = {}
 
-  for vector in top_1000_vectors:
+  for vector in top_10000_vectors:
       region = vector["metadata"].get("region", "Unknown")
       hashtags = vector["metadata"].get("hashtags", [])
       if region not in hashtags_by_region:
